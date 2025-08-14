@@ -1,5 +1,14 @@
 {
   "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/public"
+      }
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
@@ -12,13 +21,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "functions": {
-    "api/episodes.ts": {
-      "maxDuration": 30
-    },
-    "api/episodes/refresh.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
