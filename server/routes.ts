@@ -32,7 +32,7 @@ function categorizeEpisode(title: string): string {
 }
 
 // RSS parsing utility
-async function parseRSSFeed(url: string) {
+async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSchema>[]> {
   try {
     const response = await fetch(url);
     const xmlText = await response.text();
@@ -79,7 +79,17 @@ async function parseRSSFeed(url: string) {
       }
     }
     
-    return items;
+    // Validate episodes against schema
+    const validatedEpisodes = items.map((episode) => {
+      try {
+        return insertEpisodeSchema.parse(episode);
+      } catch (error) {
+        console.error('Episode validation failed:', error, 'Episode data:', episode);
+        return null;
+      }
+    }).filter((episode): episode is z.infer<typeof insertEpisodeSchema> => episode !== null);
+    
+    return validatedEpisodes;
   } catch (error) {
     console.error('Error parsing RSS feed:', error);
     throw new Error('Failed to parse RSS feed');
@@ -101,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
       
-      let allEpisodes: any[] = [];
+      let allEpisodes: z.infer<typeof insertEpisodeSchema>[] = [];
       let feedResults: string[] = [];
       
       for (const feed of feeds) {
