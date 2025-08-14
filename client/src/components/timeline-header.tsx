@@ -1,4 +1,5 @@
 import { Search, Mic, Moon, Sun, RefreshCw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useTheme } from "./theme-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,16 @@ export default function TimelineHeader({
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               <img src="/regstar.png" className="inline w-5 text-primary mr-2 mb-2 dark:invert" />
               Regulation Timeline
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-primary cursor-help ml-1">(*)</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    This project is not in fact Regulation, nor officially affiliated with Unifarm or other Regulation entities
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </h1>
           </div>
           

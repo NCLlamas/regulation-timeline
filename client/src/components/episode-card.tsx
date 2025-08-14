@@ -206,12 +206,12 @@ export default function EpisodeCard({ episode, searchQuery }: EpisodeCardProps) 
           )}
           
           <div className="mt-4 flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
-            {episode.duration && (
+            {/* {episode.duration && (
               <span data-testid="text-duration">
                 <Clock className="w-3 h-3 mr-1 inline" />
                 {episode.duration}
               </span>
-            )}
+            )} */}
             {episode.episodeNumber && (
               <span data-testid="text-episode-number">
                 Episode {episode.episodeNumber}
