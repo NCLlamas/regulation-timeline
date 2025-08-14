@@ -28,7 +28,8 @@ export default function TimelineHeader({
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              <img src="https://regulationstore.com/cdn/shop/files/regpod-apple-logo.png" className="inline w-5 text-primary mr-2 mb-2 dark:invert" />
+              {/*Hide logo till this works*/}
+              {/*<img src="https://regulationstore.com/cdn/shop/files/regpod-apple-logo.png" className="inline w-5 text-primary mr-2 mb-2 dark:invert" />*/}
               Regulation Timeline
             </h1>
           </div>
