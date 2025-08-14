@@ -21,8 +21,15 @@ export default function Timeline() {
     return `/api/episodes${queryString ? `?${queryString}` : ""}`;
   };
 
-  const { data: episodes = [], isLoading, error } = useQuery<Episode[]>({
-    queryKey: [buildQueryUrl()],
+  const { data: episodes = [], isLoading, error, refetch } = useQuery<Episode[]>({
+    queryKey: ['episodes', filterType, searchQuery],
+    queryFn: async () => {
+      const response = await fetch(buildQueryUrl());
+      if (!response.ok) {
+        throw new Error('Failed to fetch episodes');
+      }
+      return response.json();
+    },
   });
 
   // Refresh episodes from RSS feed
@@ -39,8 +46,9 @@ export default function Timeline() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Force invalidation of the episodes query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: [buildQueryUrl()] });
+      // Use the refetch function directly instead of invalidating the query
+      // This ensures we immediately get fresh data from the server
+      refetch();
       
       toast({
         title: "Episodes refreshed",

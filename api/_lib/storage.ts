@@ -23,8 +23,8 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.episodes = new Map();
     
-    // Add sample data for initial deployment
-    this.initializeSampleData();
+    // We'll add sample data only if needed via the getAllEpisodes method
+    // This avoids showing sample data after episodes have been loaded from RSS
   }
 
   private initializeSampleData() {
@@ -80,6 +80,12 @@ export class MemStorage implements IStorage {
   }
 
   async getAllEpisodes(): Promise<Episode[]> {
+    // If episodes map is empty, initialize with sample data
+    // This ensures sample data is only shown if no RSS episodes have been loaded
+    if (this.episodes.size === 0) {
+      this.initializeSampleData();
+    }
+    
     return Array.from(this.episodes.values()).sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
