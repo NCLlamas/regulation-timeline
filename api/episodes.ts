@@ -1,8 +1,35 @@
 // Vercel API route for episodes
 import { type VercelRequest, type VercelResponse } from '@vercel/node';
-import { storage } from './_lib/storage';
 
-// Storage instance is imported directly
+// Simple test data to verify the API route works
+const sampleEpisodes = [
+  {
+    id: "test-1",
+    title: "Test Episode 1",
+    description: "This is a test episode to verify the API is working",
+    link: "https://example.com/test-1",
+    pubDate: new Date("2024-01-15"),
+    episodeType: "podcast",
+    episodeNumber: "1",
+    duration: null,
+    enclosureUrl: null,
+    isExplicit: false,
+    createdAt: new Date()
+  },
+  {
+    id: "test-2", 
+    title: "Test Episode 2",
+    description: "Another test episode",
+    link: "https://example.com/test-2",
+    pubDate: new Date("2024-01-10"),
+    episodeType: "draft",
+    episodeNumber: "2",
+    duration: null,
+    enclosureUrl: null,
+    isExplicit: false,
+    createdAt: new Date()
+  }
+];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -17,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const { type, search } = req.query;
-      let episodes = await storage.getAllEpisodes();
+      let episodes = [...sampleEpisodes];
 
       // Apply filters
       if (type && type !== 'all') {
@@ -38,7 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(episodes);
     } catch (error) {
       console.error('Error fetching episodes:', error);
-      return res.status(500).json({ message: 'Failed to fetch episodes' });
+      // @ts-ignore
+      return res.status(500).json({ message: 'Failed to fetch episodes', error: error.message });
     }
   }
 
