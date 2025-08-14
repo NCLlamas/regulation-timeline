@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { type Episode } from "@shared/schema";
@@ -13,46 +13,64 @@ export default function Timeline() {
   const { toast } = useToast();
 
   // Fetch episodes
-  const buildQueryUrl = () => {
+  const buildQueryUrl = (includeRefresh = false) => {
     const params = new URLSearchParams();
     if (filterType !== "all") params.append("type", filterType);
     if (searchQuery) params.append("search", searchQuery);
+    
+    // Include refresh=true when explicitly requested
+    if (includeRefresh) params.append("refresh", "true");
+    
     const queryString = params.toString();
     return `/api/episodes${queryString ? `?${queryString}` : ""}`;
   };
 
+  // Use a ref to track initial load without causing re-renders
+  const isFirstRender = useRef(true);
+
   const { data: episodes = [], isLoading, error, refetch } = useQuery<Episode[]>({
     queryKey: ['episodes', filterType, searchQuery],
     queryFn: async () => {
-      const response = await fetch(buildQueryUrl());
+      // On first render, include refresh=true
+      const shouldRefresh = isFirstRender.current;
+      const url = buildQueryUrl(shouldRefresh);
+      
+      // Reset the flag immediately to prevent future refreshes
+      if (isFirstRender.current) {
+        isFirstRender.current = false;
+      }
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch episodes');
       }
+      
       return response.json();
-    },refetchOnMount: true,
+    },
+    refetchOnMount: true,
   });
 
-  // Refresh episodes from RSS feed
+  // Refresh episodes by resetting filters and using refresh parameter
   const refreshMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/episodes/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      // Reset search and filter state
+      setSearchQuery("");
+      setFilterType("all");
+      
+      // Fetch fresh data with the refresh parameter
+      const response = await fetch("/api/episodes?refresh=true");
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to refresh episodes");
+        throw new Error("Failed to refresh episodes");
       }
       return response.json();
     },
     onSuccess: (data) => {
-      // Use the refetch function directly instead of invalidating the query
-      // This ensures we immediately get fresh data from the server
-      refetch();
+      // Update the query cache with the fresh data
+      queryClient.setQueryData(["episodes", "all", ""], data);
       
       toast({
         title: "Episodes refreshed",
-        description: `Successfully loaded ${data.episodes?.length || 0} episodes from RSS feed`,
+        description: `Successfully loaded ${Array.isArray(data) ? data.length : 0} episodes`,
       });
     },
     onError: (error) => {
