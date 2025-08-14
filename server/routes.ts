@@ -56,7 +56,7 @@ async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSc
         const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || '';
         
         const episodeType = item.match(/<itunes:episodeType>(.*?)<\/itunes:episodeType>/)?.[1] || 'full';
-        const episodeNumber = item.match(/<itunes:episode>(.*?)<\/itunes:episode>/)?.[1] || '';
+        const itunesEpisodeNumber = item.match(/<itunes:episode>(.*?)<\/itunes:episode>/)?.[1] || '';
         const isExplicit = item.match(/<itunes:explicit>(.*?)<\/itunes:explicit>/)?.[1] === 'true';
         
         const enclosureMatch = item.match(/<enclosure[^>]*url="([^"]*)"[^>]*length="([^"]*)"[^>]*type="([^"]*)"[^>]*>/);
@@ -64,6 +64,17 @@ async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSc
         
         if (title && link && pubDate) {
           const cleanTitle = title.trim();
+          
+          // Extract episode number from title ending with [##] format
+          let episodeNumber = itunesEpisodeNumber;
+          if (!episodeNumber || episodeNumber === '') {
+            // Check for title format ending with [##]
+            const titleNumberMatch = cleanTitle.match(/\[(\d+)\]\s*$/); // Match [##] at the end of the title
+            if (titleNumberMatch && titleNumberMatch[1]) {
+              episodeNumber = titleNumberMatch[1];
+            }
+          }
+          
           items.push({
             title: cleanTitle,
             description: description.trim(),
