@@ -64,12 +64,8 @@ export default function Timeline() {
     },
   });
 
-  // Always refresh on mount to get real data from RSS feed
-  useEffect(() => {
-    if (!isLoading && !refreshMutation.isPending) {
-      refreshMutation.mutate();
-    }
-  }, [isLoading]);
+  // No need to auto-refresh on mount anymore
+  // The episodes endpoint will automatically fetch from RSS if the database is empty
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
