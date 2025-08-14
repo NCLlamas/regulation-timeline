@@ -1,7 +1,7 @@
 // Vercel API route for refreshing episodes from RSS feeds
 import { type VercelRequest, type VercelResponse } from '@vercel/node';
-import { storage } from '../_lib/storage.js';
-import { insertEpisodeSchema } from '../../shared/schema.js';
+import { storage } from '../_lib/storage';
+import { insertEpisodeSchema } from '../../shared/schema';
 
 // Storage instance is imported directly
 

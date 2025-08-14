@@ -1,6 +1,6 @@
 // Vercel API route for episodes
 import { type VercelRequest, type VercelResponse } from '@vercel/node';
-import { storage } from './_lib/storage.js';
+import { storage } from './_lib/storage';
 
 // Storage instance is imported directly
 
