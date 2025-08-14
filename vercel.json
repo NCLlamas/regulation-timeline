@@ -14,10 +14,10 @@
     }
   ],
   "functions": {
-    "api/episodes.js": {
+    "api/episodes.ts": {
       "maxDuration": 30
     },
-    "api/episodes/refresh.js": {
+    "api/episodes/refresh.ts": {
       "maxDuration": 30
     }
   }
