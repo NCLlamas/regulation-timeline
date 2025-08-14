@@ -29,7 +29,7 @@ export default function Timeline() {
         throw new Error('Failed to fetch episodes');
       }
       return response.json();
-    },
+    },refetchOnMount: true,
   });
 
   // Refresh episodes from RSS feed
