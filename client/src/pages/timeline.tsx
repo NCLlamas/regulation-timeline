@@ -64,12 +64,12 @@ export default function Timeline() {
     },
   });
 
-  // Auto-refresh on mount if no episodes
+  // Always refresh on mount to get real data from RSS feed
   useEffect(() => {
-    if (!isLoading && episodes.length === 0 && !error) {
+    if (!isLoading && !refreshMutation.isPending) {
       refreshMutation.mutate();
     }
-  }, [isLoading, episodes.length, error]);
+  }, [isLoading]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
