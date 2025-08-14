@@ -39,9 +39,9 @@ export default function Timeline() {
       return response.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ predicate: (query) => 
-        Boolean(query.queryKey[0]?.toString().startsWith('/api/episodes'))
-      });
+      // Force invalidation of the episodes query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: [buildQueryUrl()] });
+      
       toast({
         title: "Episodes refreshed",
         description: `Successfully loaded ${data.episodes?.length || 0} episodes from RSS feed`,

@@ -1,35 +1,8 @@
 // Vercel API route for episodes
 import { type VercelRequest, type VercelResponse } from '@vercel/node';
+import { storage } from './_lib/storage.js';
 
-// Simple test data to verify the API route works
-const sampleEpisodes = [
-  {
-    id: "test-1",
-    title: "Test Episode 1",
-    description: "This is a test episode to verify the API is working",
-    link: "https://example.com/test-1",
-    pubDate: new Date("2024-01-15"),
-    episodeType: "podcast",
-    episodeNumber: "1",
-    duration: null,
-    enclosureUrl: null,
-    isExplicit: false,
-    createdAt: new Date()
-  },
-  {
-    id: "test-2", 
-    title: "Test Episode 2",
-    description: "Another test episode",
-    link: "https://example.com/test-2",
-    pubDate: new Date("2024-01-10"),
-    episodeType: "draft",
-    episodeNumber: "2",
-    duration: null,
-    enclosureUrl: null,
-    isExplicit: false,
-    createdAt: new Date()
-  }
-];
+// Import storage to fetch episodes from the database
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -44,7 +17,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const { type, search } = req.query;
-      let episodes = [...sampleEpisodes];
+      
+      // Fetch all episodes from the database
+      let episodes = await storage.getAllEpisodes();
+      
+      // If no episodes in database, return empty array
+      if (!episodes || episodes.length === 0) {
+        return res.status(200).json([]);
+      }
 
       // Apply filters
       if (type && type !== 'all') {
