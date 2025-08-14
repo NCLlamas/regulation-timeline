@@ -32,7 +32,7 @@ function categorizeEpisode(title: string): string {
 }
 
 // RSS parsing utility
-async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSchema>[]> {
+async function parseRSSFeed(source: string, url: string): Promise<z.infer<typeof insertEpisodeSchema>[]> {
   try {
     const response = await fetch(url);
     const xmlText = await response.text();
@@ -55,7 +55,6 @@ async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSc
         const link = item.match(/<link>(.*?)<\/link>/)?.[1] || '';
         const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || '';
         
-        const episodeType = item.match(/<itunes:episodeType>(.*?)<\/itunes:episodeType>/)?.[1] || 'full';
         const itunesEpisodeNumber = item.match(/<itunes:episode>(.*?)<\/itunes:episode>/)?.[1] || '';
         const isExplicit = item.match(/<itunes:explicit>(.*?)<\/itunes:explicit>/)?.[1] === 'true';
         
@@ -84,7 +83,8 @@ async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSc
             episodeNumber: episodeNumber || null,
             duration: null, // Could extract from description if needed
             enclosureUrl: enclosureUrl || null,
-            isExplicit: isExplicit
+            isExplicit: isExplicit,
+            source: source === "patreon" ? "regulation" : "fface"
           });
         }
       }
@@ -107,67 +107,45 @@ async function parseRSSFeed(url: string): Promise<z.infer<typeof insertEpisodeSc
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Fetch and refresh episodes from RSS feeds
-  app.post("/api/episodes/refresh", async (req, res) => {
-    try {
-      const feeds = [
-        {
-          url: "https://www.patreon.com/rss/TheRegulationPod?auth=FI4Px3rfsiZuB02TVN2KJGWBq5dyDX1W&show=868416",
-          source: "patreon"
-        },
-        {
-          url: "https://feeds.megaphone.fm/fface",
-          source: "megaphone"
-        }
-      ];
-      
-      let allEpisodes: z.infer<typeof insertEpisodeSchema>[] = [];
-      let feedResults: string[] = [];
-      
-      for (const feed of feeds) {
-        try {
-          console.log(`Fetching from ${feed.source}: ${feed.url}`);
-          const episodes = await parseRSSFeed(feed.url);
-          allEpisodes = allEpisodes.concat(episodes);
-          feedResults.push(`${episodes.length} from ${feed.source}`);
-        } catch (feedError) {
-          console.error(`Error fetching from ${feed.source}:`, feedError);
-          feedResults.push(`${feed.source} failed`);
-        }
-      }
-      
-      // Remove duplicates based on title only
-      const uniqueEpisodes = allEpisodes.reduce((acc, episode) => {
-        const key = episode.title.trim().toLowerCase();
-        if (!acc.has(key)) {
-          acc.set(key, episode);
-        }
-        return acc;
-      }, new Map());
-      
-      const episodesToSave = Array.from(uniqueEpisodes.values());
-      
-      // Upsert episodes to storage
-      const savedEpisodes = [];
-      for (const episode of episodesToSave) {
-        const saved = await storage.upsertEpisode(episode);
-        savedEpisodes.push(saved);
-      }
-      
-      res.json({ 
-        message: `Successfully refreshed ${savedEpisodes.length} episodes (${feedResults.join(', ')})`,
-        episodes: savedEpisodes 
-      });
-    } catch (error) {
-      console.error('Error refreshing episodes:', error);
-      res.status(500).json({ 
-        message: "Failed to refresh episodes from RSS feeds",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
+async function fetchFFTranscripts(query: string) {
+  try {
+    const response = await fetch('https://meili.tgb.gg/indexes/linesv2/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 58a16902fce7a50d35c8581e89cdb42e292083a6b78d9293c25dfe6c01721700',
+      },
+      body: JSON.stringify({
+        q: query,
+      }),
+    });
+    return response.json()
+  } catch (error) {
+    console.error('Error fetching transcripts:', error);
+    return null
+  }
+}
 
+async function fetchRegTranscripts(query: string) {
+  try {
+    const response = await fetch('https://meili.tgb.gg/indexes/regulationpodcast/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer 58a16902fce7a50d35c8581e89cdb42e292083a6b78d9293c25dfe6c01721700',
+      },
+      body: JSON.stringify({
+        q: query,
+      }),
+    });
+    return response.json()
+  } catch (error) {
+    console.error('Error fetching transcripts:', error);
+    return null
+  }
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
   // Get all episodes - with optional refresh parameter
   app.get("/api/episodes", async (req, res) => {
     try {
@@ -193,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const feed of feeds) {
             try {
               console.log(`Fetching from ${feed.source}: ${feed.url}`);
-              const episodes = await parseRSSFeed(feed.url);
+              const episodes = await parseRSSFeed(feed.source, feed.url);
               allEpisodes = allEpisodes.concat(episodes);
               feedResults.push(`${episodes.length} from ${feed.source}`);
             } catch (feedError) {
@@ -241,23 +219,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch episodes" });
     }
   });
-
-
-  // Search episodes
-  // app.get("/api/episodes/search", async (req, res) => {
-  //   try {
-  //     const { q } = req.query;
-  //     if (!q || typeof q !== 'string') {
-  //       return res.status(400).json({ message: "Search query is required" });
-  //     }
-      
-  //     const episodes = await storage.searchEpisodes(q);
-  //     res.json(episodes);
-  //   } catch (error) {
-  //     console.error('Error searching episodes:', error);
-  //     res.status(500).json({ message: "Failed to search episodes" });
-  //   }
-  // });
 
   const httpServer = createServer(app);
   return httpServer;

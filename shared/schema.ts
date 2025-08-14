@@ -21,6 +21,7 @@ export const episodes = pgTable("episodes", {
   enclosureUrl: text("enclosure_url"),
   isExplicit: boolean("is_explicit").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  source: text("source").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

@@ -214,7 +214,7 @@ export default function EpisodeCard({ episode, searchQuery }: EpisodeCardProps) 
             )} */}
             {episode.episodeNumber && (
               <span data-testid="text-episode-number">
-                Episode {episode.episodeNumber}
+                {episode.source === "fface" ? "F**kFace" : "Regulation"} Episode {episode.episodeNumber}
               </span>
             )}
             {episode.isExplicit && (
